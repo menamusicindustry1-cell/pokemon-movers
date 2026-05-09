@@ -116,6 +116,9 @@ export default function PokemonTopMoversApp() {
   const [limit, setLimit] = useState(100);
   const [offset, setOffset] = useState(0);
   const [query, setQuery] = useState("");
+  const [sortConfig, setSortConfig] = useState([
+    { key: "buyWatchScore", direction: "desc" },
+  ]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -123,15 +126,38 @@ export default function PokemonTopMoversApp() {
 
   const filteredRows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((row) =>
-      [row.name, row.setName, row.rarity, row.condition, row.printing]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(q)
-    );
-  }, [rows, query]);
+
+    let result = rows;
+
+    if (q) {
+      result = rows.filter((row) =>
+        [row.name, row.setName, row.rarity, row.condition, row.printing]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
+      );
+    }
+
+    const sorted = [...result].sort((a, b) => {
+      for (const sort of sortConfig) {
+        const aVal = a[sort.key];
+        const bVal = b[sort.key];
+
+        if (aVal === bVal) continue;
+
+        if (sort.direction === "asc") {
+          return aVal > bVal ? 1 : -1;
+        }
+
+        return aVal < bVal ? 1 : -1;
+      }
+
+      return 0;
+    });
+
+    return sorted;
+  }, [rows, query, sortConfig]);
 
   const stats = useMemo(() => {
     const positive = rows.filter((r) => safeNumber(r.selectedMomentum, 0) > 0).length;
@@ -163,6 +189,32 @@ export default function PokemonTopMoversApp() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function toggleSort(key) {
+    setSortConfig((prev) => {
+      const existing = prev.find((s) => s.key === key);
+
+      if (!existing) {
+        return [...prev, { key, direction: "desc" }];
+      }
+
+      if (existing.direction === "desc") {
+        return prev.map((s) =>
+          s.key === key ? { ...s, direction: "asc" } : s
+        );
+      }
+
+      return prev.filter((s) => s.key !== key);
+    });
+  }
+
+  function getSortIndicator(key) {
+    const sort = sortConfig.find((s) => s.key === key);
+
+    if (!sort) return "";
+
+    return sort.direction === "desc" ? " ↓" : " ↑";
   }
 
   function loadDemo() {
@@ -300,10 +352,10 @@ export default function PokemonTopMoversApp() {
                   <th className="px-4 py-3">Rank</th>
                   <th className="px-4 py-3">Card</th>
                   <th className="px-4 py-3">Variant</th>
-                  <th className="px-4 py-3">Price</th>
-                  <th className="px-4 py-3">24h</th>
-                  <th className="px-4 py-3">7d</th>
-                  <th className="px-4 py-3">30d</th>
+                  <th onClick={() => toggleSort("price")} className="cursor-pointer px-4 py-3 hover:text-white">Price{getSortIndicator("price")}</th>
+                  <th onClick={() => toggleSort("change24h")} className="cursor-pointer px-4 py-3 hover:text-white">24h{getSortIndicator("change24h")}</th>
+                  <th onClick={() => toggleSort("change7d")} className="cursor-pointer px-4 py-3 hover:text-white">7d{getSortIndicator("change7d")}</th>
+                  <th onClick={() => toggleSort("change30d")} className="cursor-pointer px-4 py-3 hover:text-white">30d{getSortIndicator("change30d")}</th>
                   <th className="px-4 py-3">30d Range</th>
                   <th className="px-4 py-3">Changes</th>
                   <th className="px-4 py-3">Score</th>
@@ -321,10 +373,10 @@ export default function PokemonTopMoversApp() {
                         <div className="text-xs text-slate-400">{row.setName} · {row.rarity || "Unknown rarity"} · #{row.number || "N/A"}</div>
                       </td>
                       <td className="px-4 py-4 text-slate-300">{row.condition || "—"} / {row.printing || "—"}</td>
-                      <td className="px-4 py-4 font-semibold">{currency(row.price)}</td>
-                      <td className="px-4 py-4">{pct(row.change24h)}</td>
-                      <td className="px-4 py-4">{pct(row.change7d)}</td>
-                      <td className="px-4 py-4">{pct(row.change30d)}</td>
+                      <td className="px-4 py-4 font-semibold text-white">{currency(row.price)}</td>
+                      <td className="px-4 py-4 text-white">{pct(row.change24h)}</td>
+                      <td className="px-4 py-4 text-white">{pct(row.change7d)}</td>
+                      <td className="px-4 py-4 text-white">{pct(row.change30d)}</td>
                       <td className="px-4 py-4 text-slate-300">{currency(row.min30d)} – {currency(row.max30d)}</td>
                       <td className="px-4 py-4 text-slate-300">{row.priceChanges30d ?? "—"}</td>
                       <td className="px-4 py-4">
@@ -353,4 +405,3 @@ export default function PokemonTopMoversApp() {
     </div>
   );
 }
-
