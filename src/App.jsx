@@ -141,16 +141,24 @@ export default function PokemonTopMoversApp() {
 
     const sorted = [...result].sort((a, b) => {
       for (const sort of sortConfig) {
-        const aVal = a[sort.key];
-        const bVal = b[sort.key];
+        const aRaw = a[sort.key];
+        const bRaw = b[sort.key];
 
-        if (aVal === bVal) continue;
+        const aNum = Number(aRaw);
+        const bNum = Number(bRaw);
+        const bothNumeric = Number.isFinite(aNum) && Number.isFinite(bNum);
 
-        if (sort.direction === "asc") {
-          return aVal > bVal ? 1 : -1;
+        let comparison = 0;
+
+        if (bothNumeric) {
+          comparison = aNum - bNum;
+        } else {
+          comparison = String(aRaw || "").localeCompare(String(bRaw || ""));
         }
 
-        return aVal < bVal ? 1 : -1;
+        if (comparison !== 0) {
+          return sort.direction === "asc" ? comparison : -comparison;
+        }
       }
 
       return 0;
@@ -191,22 +199,30 @@ export default function PokemonTopMoversApp() {
     }
   }
 
-  function toggleSort(key) {
+  function toggleSort(key, event) {
+    const isMultiSort = event?.shiftKey;
+
     setSortConfig((prev) => {
+      const baseSorts = isMultiSort ? prev : [];
       const existing = prev.find((s) => s.key === key);
 
       if (!existing) {
-        return [...prev, { key, direction: "desc" }];
+        return [...baseSorts, { key, direction: "desc" }];
       }
 
       if (existing.direction === "desc") {
-        return prev.map((s) =>
-          s.key === key ? { ...s, direction: "asc" } : s
-        );
+        const updatedSort = { key, direction: "asc" };
+        return isMultiSort
+          ? prev.map((s) => (s.key === key ? updatedSort : s))
+          : [updatedSort];
       }
 
-      return prev.filter((s) => s.key !== key);
+      return isMultiSort ? prev.filter((s) => s.key !== key) : [];
     });
+  }
+
+  function clearSort() {
+    setSortConfig([{ key: "buyWatchScore", direction: "desc" }]);
   }
 
   function getSortIndicator(key) {
@@ -214,7 +230,8 @@ export default function PokemonTopMoversApp() {
 
     if (!sort) return "";
 
-    return sort.direction === "desc" ? " ↓" : " ↑";
+    const priority = sortConfig.findIndex((s) => s.key === key) + 1;
+    return `${sort.direction === "desc" ? " ↓" : " ↑"}${priority > 1 ? priority : ""}`;
   }
 
   function loadDemo() {
@@ -335,14 +352,22 @@ export default function PokemonTopMoversApp() {
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-xl font-bold">Ranked Watchlist</h2>
-              <p className="text-sm text-slate-400">Use this as a watchlist. Check condition, sold comps, seller quality, and fake risk before buying.</p>
+              <p className="text-sm text-slate-400">Use this as a watchlist. Click a header to sort. Shift-click additional headers for multi-sort. Click Reset Sort to return to Score ranking.</p>
             </div>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search card, set, rarity..."
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-orange-400 md:w-80"
-            />
+            <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row">
+              <button
+                onClick={clearSort}
+                className="rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+              >
+                Reset Sort
+              </button>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search card, set, rarity..."
+                className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-orange-400 md:w-80"
+              />
+            </div>
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-slate-800">
@@ -352,13 +377,13 @@ export default function PokemonTopMoversApp() {
                   <th className="px-4 py-3">Rank</th>
                   <th className="px-4 py-3">Card</th>
                   <th className="px-4 py-3">Variant</th>
-                  <th onClick={() => toggleSort("price")} className="cursor-pointer px-4 py-3 hover:text-white">Price{getSortIndicator("price")}</th>
-                  <th onClick={() => toggleSort("change24h")} className="cursor-pointer px-4 py-3 hover:text-white">24h{getSortIndicator("change24h")}</th>
-                  <th onClick={() => toggleSort("change7d")} className="cursor-pointer px-4 py-3 hover:text-white">7d{getSortIndicator("change7d")}</th>
-                  <th onClick={() => toggleSort("change30d")} className="cursor-pointer px-4 py-3 hover:text-white">30d{getSortIndicator("change30d")}</th>
+                  <th onClick={(e) => toggleSort("price", e)} className="cursor-pointer px-4 py-3 text-white hover:text-orange-300">Price{getSortIndicator("price")}</th>
+                  <th onClick={(e) => toggleSort("change24h", e)} className="cursor-pointer px-4 py-3 text-white hover:text-orange-300">24h{getSortIndicator("change24h")}</th>
+                  <th onClick={(e) => toggleSort("change7d", e)} className="cursor-pointer px-4 py-3 text-white hover:text-orange-300">7d{getSortIndicator("change7d")}</th>
+                  <th onClick={(e) => toggleSort("change30d", e)} className="cursor-pointer px-4 py-3 text-white hover:text-orange-300">30d{getSortIndicator("change30d")}</th>
                   <th className="px-4 py-3">30d Range</th>
-                  <th className="px-4 py-3">Changes</th>
-                  <th className="px-4 py-3">Score</th>
+                  <th onClick={(e) => toggleSort("priceChanges30d", e)} className="cursor-pointer px-4 py-3 hover:text-orange-300">Changes{getSortIndicator("priceChanges30d")}</th>
+                  <th onClick={(e) => toggleSort("buyWatchScore", e)} className="cursor-pointer px-4 py-3 hover:text-orange-300">Score{getSortIndicator("buyWatchScore")}</th>
                   <th className="px-4 py-3">Link</th>
                 </tr>
               </thead>
