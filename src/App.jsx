@@ -89,7 +89,7 @@ async function fetchJson(url) {
   return json;
 }
 
-async function fetchTopMovers({ timeframe, maxPrice, minPrice, condition, printing, pokemonSet, useSetFilter, limit, offset }) {
+async function fetchTopMovers({ timeframe, maxPrice, minPrice, condition, printing, rarityFilter, pokemonSet, useSetFilter, limit, offset }) {
   const params = new URLSearchParams({
     timeframe: String(timeframe),
     maxPrice: String(maxPrice),
@@ -109,6 +109,7 @@ async function fetchTopMovers({ timeframe, maxPrice, minPrice, condition, printi
 }
 
 export default function PokemonTopMoversApp() {
+  const [rarityFilter, setRarityFilter] = useState("Any");
   const [timeframe, setTimeframe] = useState("7d");
   const [maxPrice, setMaxPrice] = useState(100);
   const [minPrice, setMinPrice] = useState(5);
@@ -188,6 +189,7 @@ export default function PokemonTopMoversApp() {
         minPrice: Number(minPrice),
         condition,
         printing,
+        rarityFilter,
         pokemonSet,
         useSetFilter,
         limit: Number(limit),
@@ -195,7 +197,7 @@ export default function PokemonTopMoversApp() {
       });
       setRows(data);
       if (!data.length) {
-        setError("No matching cards found. Raise API Limit, lower Min Price, deactivate the Set filter, or choose Any condition/printing.");
+        setError("No matching cards found. Raise API Limit, adjust Min/Max Price, deactivate the Set filter, or choose Any condition/printing.");
       }
     } catch (err) {
       setError(String(err.message || err || "Something went wrong."));
@@ -270,7 +272,7 @@ export default function PokemonTopMoversApp() {
 
         <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl md:p-6">
           <div className="mb-4 text-lg font-semibold text-slate-100">Filters</div>
-          <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-8">
+          <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-9">
             <label>
               <span className="text-sm text-slate-400">Mover Window</span>
               <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-orange-400">
@@ -310,6 +312,28 @@ export default function PokemonTopMoversApp() {
                 <option>Reverse Holofoil</option>
                 <option>1st Edition</option>
                 <option>Unlimited</option>
+              </select>
+            </label>
+
+            <label>
+              <span className="text-sm text-slate-400">Rarity</span>
+              <select
+                value={rarityFilter}
+                onChange={(e) => setRarityFilter(e.target.value)}
+                className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-orange-400"
+              >
+                <option>Any</option>
+                <option>Common</option>
+                <option>Uncommon</option>
+                <option>Rare</option>
+                <option>Holo Rare</option>
+                <option>Ultra Rare</option>
+                <option>Illustration Rare</option>
+                <option>Special Illustration Rare</option>
+                <option>Double Rare</option>
+                <option>ACE SPEC Rare</option>
+                <option>Promo</option>
+                <option>Shiny Rare</option>
               </select>
             </label>
 
