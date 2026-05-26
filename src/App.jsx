@@ -89,13 +89,14 @@ async function fetchJson(url) {
   return json;
 }
 
-async function fetchTopMovers({ timeframe, maxPrice, minPrice, condition, printing, limit, offset }) {
+async function fetchTopMovers({ timeframe, maxPrice, minPrice, condition, printing, pokemonSet, limit, offset }) {
   const params = new URLSearchParams({
     timeframe: String(timeframe),
     maxPrice: String(maxPrice),
     minPrice: String(minPrice),
     condition: String(condition),
     printing: String(printing),
+    pokemonSet: String(pokemonSet || ""),
     limit: String(limit),
     offset: String(offset),
   });
@@ -112,6 +113,7 @@ export default function PokemonTopMoversApp() {
   const [maxPrice, setMaxPrice] = useState(100);
   const [minPrice, setMinPrice] = useState(5);
   const [condition, setCondition] = useState("NM");
+  const [pokemonSet, setPokemonSet] = useState("");
   const [printing, setPrinting] = useState("Any");
   const [limit, setLimit] = useState(100);
   const [offset, setOffset] = useState(0);
@@ -185,12 +187,13 @@ export default function PokemonTopMoversApp() {
         minPrice: Number(minPrice),
         condition,
         printing,
+        pokemonSet,
         limit: Number(limit),
         offset: Number(offset),
       });
       setRows(data);
       if (!data.length) {
-        setError("No matching cards found. Raise API Limit, lower Min Price, or choose Any condition/printing.");
+        setError("No matching cards found. Raise API Limit, lower Min Price, clear the Set filter, or choose Any condition/printing.");
       }
     } catch (err) {
       setError(String(err.message || err || "Something went wrong."));
@@ -265,7 +268,7 @@ export default function PokemonTopMoversApp() {
 
         <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl md:p-6">
           <div className="mb-4 text-lg font-semibold text-slate-100">Filters</div>
-          <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-7">
+          <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-8">
             <label>
               <span className="text-sm text-slate-400">Mover Window</span>
               <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-orange-400">
@@ -306,6 +309,16 @@ export default function PokemonTopMoversApp() {
                 <option>1st Edition</option>
                 <option>Unlimited</option>
               </select>
+            </label>
+
+            <label className="md:col-span-2">
+              <span className="text-sm text-slate-400">Pokémon Set ID</span>
+              <input
+                value={pokemonSet}
+                onChange={(e) => setPokemonSet(e.target.value)}
+                placeholder="ex: sv08-surging-sparks-pokemon"
+                className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-orange-400"
+              />
             </label>
 
             <label>
