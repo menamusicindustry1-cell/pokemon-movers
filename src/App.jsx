@@ -89,7 +89,7 @@ async function fetchJson(url) {
   return json;
 }
 
-async function fetchTopMovers({ timeframe, maxPrice, minPrice, condition, printing, rarityFilter, pokemonSet, useSetFilter, limit, offset }) {
+async function fetchTopMovers({ timeframe, maxPrice, minPrice, condition, printing, rarityFilter, pokemonSet, useSetFilter, newerOnly, releaseYearCutoff, limit, offset }) {
   const params = new URLSearchParams({
     timeframe: String(timeframe),
     maxPrice: String(maxPrice),
@@ -97,6 +97,8 @@ async function fetchTopMovers({ timeframe, maxPrice, minPrice, condition, printi
     condition: String(condition),
     printing: String(printing),
     pokemonSet: useSetFilter ? String(pokemonSet || "") : "",
+    newerOnly: newerOnly ? "true" : "false",
+    releaseYearCutoff: String(releaseYearCutoff || 2023),
     limit: String(limit),
     offset: String(offset),
   });
@@ -115,6 +117,8 @@ export default function PokemonTopMoversApp() {
   const [minPrice, setMinPrice] = useState(5);
   const [condition, setCondition] = useState("NM");
   const [pokemonSet, setPokemonSet] = useState("");
+  const [newerOnly, setNewerOnly] = useState(false);
+  const [releaseYearCutoff, setReleaseYearCutoff] = useState(2023);
   const [useSetFilter, setUseSetFilter] = useState(false);
   const [printing, setPrinting] = useState("Any");
   const [limit, setLimit] = useState(100);
@@ -192,12 +196,14 @@ export default function PokemonTopMoversApp() {
         rarityFilter,
         pokemonSet,
         useSetFilter,
+        newerOnly,
+        releaseYearCutoff,
         limit: Number(limit),
         offset: Number(offset),
       });
       setRows(data);
       if (!data.length) {
-        setError("No matching cards found. Raise API Limit, adjust Min/Max Price, deactivate the Set filter, or choose Any condition/printing.");
+        setError("No matching cards found. Raise API Limit, adjust Min/Max Price, deactivate Set/Newer filters, or choose Any condition/printing.");
       }
     } catch (err) {
       setError(String(err.message || err || "Something went wrong."));
@@ -361,6 +367,39 @@ export default function PokemonTopMoversApp() {
                     : "border-slate-800 bg-slate-900/40 text-slate-500 cursor-not-allowed"
                 }`}
               />
+            </label>
+
+            <label className="md:col-span-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-slate-400">Newer Cards Only</span>
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={newerOnly}
+                    onChange={(e) => setNewerOnly(e.target.checked)}
+                    className="h-4 w-4 accent-orange-500"
+                  />
+                  Activate
+                </label>
+              </div>
+              <select
+                value={releaseYearCutoff}
+                onChange={(e) => setReleaseYearCutoff(e.target.value)}
+                disabled={!newerOnly}
+                className={`mt-1 w-full rounded-2xl border px-4 py-3 text-slate-100 outline-none focus:border-orange-400 ${
+                  newerOnly
+                    ? "border-slate-700 bg-slate-950"
+                    : "border-slate-800 bg-slate-900/40 text-slate-500 cursor-not-allowed"
+                }`}
+              >
+                <option value="2026">2026 and newer</option>
+                <option value="2025">2025 and newer</option>
+                <option value="2024">2024 and newer</option>
+                <option value="2023">2023 and newer</option>
+                <option value="2022">2022 and newer</option>
+                <option value="2021">2021 and newer</option>
+                <option value="2020">2020 and newer</option>
+              </select>
             </label>
 
             <label>
