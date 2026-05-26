@@ -89,14 +89,14 @@ async function fetchJson(url) {
   return json;
 }
 
-async function fetchTopMovers({ timeframe, maxPrice, minPrice, condition, printing, pokemonSet, limit, offset }) {
+async function fetchTopMovers({ timeframe, maxPrice, minPrice, condition, printing, pokemonSet, useSetFilter, limit, offset }) {
   const params = new URLSearchParams({
     timeframe: String(timeframe),
     maxPrice: String(maxPrice),
     minPrice: String(minPrice),
     condition: String(condition),
     printing: String(printing),
-    pokemonSet: String(pokemonSet || ""),
+    pokemonSet: useSetFilter ? String(pokemonSet || "") : "",
     limit: String(limit),
     offset: String(offset),
   });
@@ -114,6 +114,7 @@ export default function PokemonTopMoversApp() {
   const [minPrice, setMinPrice] = useState(5);
   const [condition, setCondition] = useState("NM");
   const [pokemonSet, setPokemonSet] = useState("");
+  const [useSetFilter, setUseSetFilter] = useState(false);
   const [printing, setPrinting] = useState("Any");
   const [limit, setLimit] = useState(100);
   const [offset, setOffset] = useState(0);
@@ -188,12 +189,13 @@ export default function PokemonTopMoversApp() {
         condition,
         printing,
         pokemonSet,
+        useSetFilter,
         limit: Number(limit),
         offset: Number(offset),
       });
       setRows(data);
       if (!data.length) {
-        setError("No matching cards found. Raise API Limit, lower Min Price, clear the Set filter, or choose Any condition/printing.");
+        setError("No matching cards found. Raise API Limit, lower Min Price, deactivate the Set filter, or choose Any condition/printing.");
       }
     } catch (err) {
       setError(String(err.message || err || "Something went wrong."));
@@ -312,12 +314,28 @@ export default function PokemonTopMoversApp() {
             </label>
 
             <label className="md:col-span-2">
-              <span className="text-sm text-slate-400">Pokémon Set ID</span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-slate-400">Pokémon Set ID</span>
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={useSetFilter}
+                    onChange={(e) => setUseSetFilter(e.target.checked)}
+                    className="h-4 w-4 accent-orange-500"
+                  />
+                  Activate
+                </label>
+              </div>
               <input
                 value={pokemonSet}
                 onChange={(e) => setPokemonSet(e.target.value)}
+                disabled={!useSetFilter}
                 placeholder="ex: sv08-surging-sparks-pokemon"
-                className="mt-1 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-orange-400"
+                className={`mt-1 w-full rounded-2xl border px-4 py-3 text-slate-100 outline-none focus:border-orange-400 ${
+                  useSetFilter
+                    ? "border-slate-700 bg-slate-950"
+                    : "border-slate-800 bg-slate-900/40 text-slate-500 cursor-not-allowed"
+                }`}
               />
             </label>
 
